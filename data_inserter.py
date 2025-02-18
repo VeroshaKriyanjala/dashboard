@@ -14,15 +14,16 @@ def insert_data():
     try:
         while True:
             # Generate random data (simulate sensor reading)
-            value = random.uniform(10, 30)
-            
+            value1 = random.uniform(10, 30)
+            value2 = random.uniform(15, 40)
+
             cursor.execute("""
-                INSERT INTO sensor_data (value)
-                VALUES (%s)
-            """, (value,))
+                INSERT INTO sensor_data (value1, value2)
+                VALUES (%s, %s)
+            """, (value1, value2))
             
             conn.commit()
-            print(f"Inserted value: {value}")
+            print(f"Inserted value: {value1}, {value2}")
             time.sleep(1)
             
     except KeyboardInterrupt:

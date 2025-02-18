@@ -4,7 +4,7 @@ import pandas as pd
 import plotly.express as px
 import time
 
-def get_data():
+def get_data(query):
     conn = mysql.connector.connect(
         host="localhost",
         user="root",
@@ -12,17 +12,25 @@ def get_data():
         database="sensor_db"
     )
     
-    query = """
-    SELECT timestamp, value1, value2 
-    FROM sensor_data
-    ORDER BY timestamp DESC
-    LIMIT 100
-    """
-    
     df = pd.read_sql(query, con=conn, parse_dates=['timestamp'])  # Fix pandas SQL warning
     conn.close()
     
     return df.sort_values(by="timestamp")
+
+def generate_query(columns, aggregations, aliases):
+    base_query = "SELECT "
+    
+    selected_columns = []
+    for i, col in enumerate(columns):
+        aggregation = aggregations[i] if aggregations[i] else ""
+        alias = aliases[i] if aliases[i] else col
+        column_str = f"{aggregation} {col} AS {alias}" if aggregation else f"{col} AS {alias}"
+        selected_columns.append(column_str)
+    
+    base_query += ", ".join(selected_columns)
+    base_query += " FROM sensor_data ORDER BY timestamp DESC LIMIT 100"
+    
+    return base_query
 
 def main():
     st.set_page_config(page_title="Real-Time Sensor Dashboard", layout="wide")
@@ -30,6 +38,19 @@ def main():
     st.markdown("<h2 style='text-align: center; color: white;'>Real-Time Sensor Dashboard</h2>", 
                 unsafe_allow_html=True)
 
+    # Column selection section
+    columns = ['timestamp', 'value1', 'value2']
+    selected_columns = st.multiselect("Select Columns", columns, default=['timestamp', 'value1'])
+    aggregations = [st.selectbox(f"Select Aggregation for {col}", ["", "SUM", "AVG", "COUNT"], index=0) for col in selected_columns]
+    aliases = [st.text_input(f"Alias for {col}", value=col) for col in selected_columns]
+    
+    # Generate query based on selected columns, aggregations, and aliases
+    query = generate_query(selected_columns, aggregations, aliases)
+    
+    # Display query in read-only preview
+    st.text_area("Generated SQL Query", query, height=200, disabled=True)
+
+    # Data Refresh Section
     col1, col2 = st.columns(2)
     
     with col1:
@@ -61,7 +82,7 @@ def main():
     placeholder = st.empty()
 
     with placeholder.container():
-        data = get_data()
+        data = get_data(query)
 
         if not data.empty:
             latest = data.iloc[-1]

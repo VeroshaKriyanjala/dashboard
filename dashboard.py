@@ -2,10 +2,10 @@ import streamlit as st
 import mysql.connector
 import pandas as pd
 import time
-from st_autorefresh import st_autorefresh
+# from st_autorefresh import st_autorefresh
 
 # Auto-refresh every 5 seconds
-st_autorefresh(interval=5000, limit=None, key="data_refresh")
+# st_autorefresh(interval=5000, limit=None, key="data_refresh")
 
 def get_data():
     conn = mysql.connector.connect(

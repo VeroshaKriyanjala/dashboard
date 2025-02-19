@@ -74,9 +74,13 @@ def main():
     if 'last_refresh' not in st.session_state:
         st.session_state.last_refresh = time.time()
 
+    # Initialize session state
+    if 'active_rows' not in st.session_state:
+        st.session_state.active_rows = [0]  # Track active row indices
+
     # Column configuration
     st.subheader("Column Configuration")
-    
+
     # Header
     cols = st.columns([3, 2, 2, 1])
     with cols[0]: st.markdown("**Column**")
@@ -89,43 +93,46 @@ def main():
     aggregations = []
     aliases = []
 
-    for i in range(st.session_state.num_rows):
+    for row_id in st.session_state.active_rows:
         cols = st.columns([3, 2, 2, 1])
-        
+
         with cols[0]:
             col = st.selectbox(
-                f"Column {i}", 
+                f"Column {row_id}", 
                 options=all_columns,
-                key=f"col_{i}"
+                key=f"col_{row_id}"
             )
             selected_columns.append(col)
-        
+
         with cols[1]:
             agg = st.selectbox(
-                f"Aggregation {i}", 
+                f"Aggregation {row_id}", 
                 [None, "AVG", "SUM", "COUNT", "MAX", "MIN"], 
-                key=f"agg_{i}"
+                key=f"agg_{row_id}"
             )
             aggregations.append(agg)
-        
+
         with cols[2]:
             alias = st.text_input(
-                f"Alias {i}", 
+                f"Alias {row_id}", 
                 value=col,
-                key=f"alias_{i}"
+                key=f"alias_{row_id}"
             )
             aliases.append(alias)
-        
+
         with cols[3]:
-            if i == st.session_state.num_rows - 1:
-                if st.session_state.num_rows < max_rows:
-                    if st.button("➕", key=f"add_{i}"):
-                        st.session_state.num_rows += 1
-                        st.rerun()
-                if st.session_state.num_rows > 1:
-                    if st.button("➖", key=f"remove_{i}"):
-                        st.session_state.num_rows -= 1
-                        st.rerun()
+            if len(st.session_state.active_rows) > 1:
+                if st.button("🗑️", key=f"remove_{row_id}"):
+                    st.session_state.active_rows.remove(row_id)
+                    st.rerun()
+
+    # Add new row button
+    if len(st.session_state.active_rows) < max_rows:
+        if st.button("➕ Add Row"):
+            new_id = max(st.session_state.active_rows) + 1
+            st.session_state.active_rows.append(new_id)
+            st.rerun()
+
 
     # Query generation
     query = generate_query(selected_columns, aggregations, aliases, table_name)

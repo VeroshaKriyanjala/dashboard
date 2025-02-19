@@ -3,6 +3,7 @@ import mysql.connector
 import pandas as pd
 import plotly.express as px
 import time
+from streamlit_autorefresh import st_autorefresh
 
 def get_table_columns(table_name):
     """Dynamically fetch column names from database"""
@@ -48,7 +49,7 @@ def generate_query(selected_columns, aggregations, aliases, table_name):
         selected_items.append(item)
     
     base_query += ", ".join(selected_items)
-    base_query += f" FROM {table_name} ORDER BY timestamp DESC LIMIT 100"
+    base_query += f" FROM {table_name} ORDER BY timestamp DESC"
     
     return base_query
 
@@ -138,7 +139,7 @@ def main():
     query = generate_query(selected_columns, aggregations, aliases, table_name)
     st.code(f"Generated SQL:\n{query}", language="sql")
 
-    # Refresh controls
+    # Auto Refresh Interval Selection
     refresh_col1, refresh_col2 = st.columns([2, 1])
     with refresh_col1:
         refresh_interval = st.selectbox(
@@ -151,18 +152,17 @@ def main():
             st.session_state.last_refresh = time.time()
             st.rerun()
 
-    # Auto-refresh logic
+    # Auto-refresh logic using st_autorefresh
     interval_map = {
-        "5s": 5,
-        "10s": 10,
-        "30s": 30,
-        "1m": 60
+        "5s": 5000,   # milliseconds
+        "10s": 10000,
+        "30s": 30000,
+        "1m": 60000
     }
-    interval = interval_map[refresh_interval]
+    refresh_milliseconds = interval_map[refresh_interval]
+
+    st_autorefresh(interval=refresh_milliseconds, key="auto_refresh")
     
-    if (time.time() - st.session_state.last_refresh) > interval:
-        st.session_state.last_refresh = time.time()
-        st.rerun()
 
     # Data display
     try:

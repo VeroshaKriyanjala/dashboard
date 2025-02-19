@@ -1,5 +1,6 @@
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
+import time
 
 def auto_refresh():
     """Handles automatic refreshing based on selected interval."""
